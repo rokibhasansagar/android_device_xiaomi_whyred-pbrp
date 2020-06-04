@@ -14,13 +14,20 @@
 # limitations under the License.
 #
 
-# Release name
-PRODUCT_RELEASE_NAME := whyred
+# Soong namespaces
+PRODUCT_SOONG_NAMESPACES += \
+     $(LOCAL_PATH)
 
-$(call inherit-product, build/target/product/embedded.mk)
+$(call inherit-product, $(SRC_TARGET_DIR)/product/aosp_base.mk)
 
 # Inherit from our custom product configuration
 $(call inherit-product, vendor/pb/config/common.mk)
+
+PRODUCT_PACKAGES += \
+    charger_res_images \
+    charger
+
+PRODUCT_COPY_FILES += $(call find-copy-subdir-files,*,$(LOCAL_PATH)/recovery/root,recovery/root)
 
 ## Device identifier. This must come after all inclusions
 PRODUCT_DEVICE := whyred
