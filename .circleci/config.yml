@@ -5,9 +5,9 @@ jobs:
       # new all-in-one docker image
       - image: fr3akyphantom/droid-builder:latest
     environment:
-      MANIFEST_BRANCH: 'android-9.0'
+      MANIFEST_BRANCH: 'android-10.0'
       # PBRP_BRANCH: 'devs'
-      VERSION: '2.9.1'
+      VERSION: '2.9.1-1'
       VENDOR: 'xiaomi'
       CODENAME: 'whyred'
       BUILD_LUNCH: 'omni_whyred-eng'
@@ -33,5 +33,5 @@ workflows:
       - build:
           filters:
             branches:
-              only: android-9.0
+              only: android-10.0
           context: org-global
