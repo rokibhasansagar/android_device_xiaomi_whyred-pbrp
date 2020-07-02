@@ -95,6 +95,8 @@ jobs:
             repo init -q -u https://github.com/PitchBlackRecoveryProject/manifest_pb.git -b ${MANIFEST_BRANCH} --depth=1
             time repo sync -c -q --force-sync --no-clone-bundle --no-tags -j$(nproc --all)
             
+            rm -rf vendor/pb && git clone --depth 1 https://github.com/PitchBlackRecoveryProject/vendor_pb.git -b "pb-10.0" vendor/pb
+            
             echo -e "\nGetting the Device Tree on place"
             git clone https://$GITHUB_TOKEN@github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME} -b ${CIRCLE_BRANCH} device/${VENDOR}/${CODENAME}
             
