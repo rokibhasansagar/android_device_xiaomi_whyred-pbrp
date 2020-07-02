@@ -6,13 +6,12 @@ jobs:
     environment:
       MANIFEST_BRANCH: 'android-10.0'
       VERSION: '2.9.1-test'
-      MAINTAINER: 'PBRP Team'
+      MAINTAINER: 'PBRP-Team'
       VENDOR: 'xiaomi'
       CODENAME: 'whyred'
       FLAVOR: 'eng'
       TEST_BUILD: 'true'
-      CHANGELOG: |
-        - Initial Build
+      CHANGELOG: "- Initial Build"
     working_directory: /home/alpine/pitchblack
     steps:
       - run:
