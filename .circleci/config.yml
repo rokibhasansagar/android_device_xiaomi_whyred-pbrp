@@ -2,36 +2,125 @@ version: 2.1
 jobs:
   build:
     docker:
-      # new all-in-one docker image
-      - image: fr3akyphantom/droid-builder:latest
-    environment:
-      MANIFEST_BRANCH: 'android-10.0'
-      # PBRP_BRANCH: 'devs'
-      VERSION: '2.9.1-1'
-      VENDOR: 'xiaomi'
-      CODENAME: 'whyred'
-      BUILD_LUNCH: 'omni_whyred-eng'
-      # Remove the following when Publishing Official
-      TEST_BUILD: 'true'
-      # Only for Official Build, uncomment following
-      # PB_OFFICIAL: 'true'
-    working_directory: /home/builder/pitchblack
+      - image: docker:git
+    working_directory: /home/alpine/pitchblack
     steps:
       - run:
-          name: AIO Build
           command: |
-            echo "Set GitAuth Infos too"
+            set -xe
+            whoami
+            echo 'alpine ALL=NOPASSWD: ALL' >> /etc/shadow
+            echo "alpine ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+            chmod 0440 /etc/sudoers
+            echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories
+            echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
+            echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
+            apk add -uU --no-cache --purge \
+              alpine-sdk coreutils build-base util-linux bash sudo shadow curl ca-certificates git \
+              make libc-dev zlib libstdc++ wget wput rsync sshpass openssh openssl gnupg \
+              python3 py3-pip zip unzip tar xz pixz tree gawk p7zip
+            rm -rf /var/cache/apk/* /tmp/*
+            curl -s https://api.github.com/repos/tcnksm/ghr/releases/latest | grep "browser_download_url" | grep "amd64.tar.gz" | cut -d '"' -f 4 | wget -qi -
+            tar -xzf ghr_*_amd64.tar.gz
+            cp ghr_*_amd64/ghr /usr/local/bin/
+            rm -rf ghr_*
+            chmod a+x /usr/local/bin/ghr
+          name: Setup packages in docker container
+      - setup_remote_docker:
+          version: 19.03.8
+      #- run:
+          #name: Create Docker volumes
+          #command: |
+            #docker create --name input --volume /home/builder/base alpine:3.12 /bin/true
+            #docker cp . input:/home/builder/base/
+            #docker create --name output --volume /home/builder/pitchblack alpine:3.12 /bin/true
+            #docker cp build.sh output:/home/builder/pitchblack/
+      - run:
+          command: |
+            set -xe
+            [ ! -d /home/alpine/.ccache ] && mkdir -p /home/alpine/.ccache
+            docker pull fr3akyphantom/droid-builder:focal
+            docker run --privileged --rm -i \
+              -e USER_ID=$(id -u) -e GROUP_ID=$(id -g) \
+              -e JAVA_OPTS=" -Xmx8G " \
+              -e GitHubMail=${GitHubMail} \
+              -e GitHubName=${GitHubName} \
+              -e GITHUB_TOKEN=${GITHUB_TOKEN} \
+              -e CIRCLE_PROJECT_USERNAME=rokibhasansagar \
+              -e CIRCLE_PROJECT_REPONAME=android_device_xiaomi_whyred-pbrp \
+              -e CIRCLE_BRANCH=android-10.0 \
+              -e CIRCLE_SHA1=${CIRCLE_SHA1} \
+              -e MANIFEST_BRANCH="android-10.0" \
+              -e VERSION="2.9.1-test" \
+              -e MAINTAINER="PBRP Team" \
+              -e VENDOR="xiaomi" \
+              -e CODENAME="whyred" \
+              -e FLAVOR="eng" \
+              -e TEST_BUILD="true" \
+              -e CHANGELOG="- Initial Build\n" \
+              -v "/home/alpine/pitchblack:/home/builder/pitchblack/:rw,z" \
+              -v "/home/alpine/.ccache:/srv/ccache:rw" \
+              fr3akyphantom/droid-builder:focal bash \<< EOF
+            set -xe
+            whoami
+            sudo whoami
+            pwd
+            
+            # Set GitAuth Infos"
             git config --global user.email $GitHubMail
             git config --global user.name $GitHubName
+            git config --global credential.helper store
             git config --global color.ui true
-            wget -q https://raw.githubusercontent.com/PitchBlackRecoveryProject/vendor_pb/pb/build.sh
-            source build.sh
+            
+            echo -e "Starting the CI Build Process...\n"
+            
+            [ -d /home/builder/pitchblack ] && echo "docker-specific home dir is available"
+            [ -d /home/alpine/pitchblack ] && echo "runner-specific home dir is available"
+            
+            cd /home/builder/pitchblack || cd /home/alpine/pitchblack
+
+            mkdir -p /home/builder/pitchblack/work && cd work
+
+            echo -e "Initializing PBRP repo sync..."
+            repo init -q -u https://github.com/PitchBlackRecoveryProject/manifest_pb.git -b ${MANIFEST_BRANCH} --depth=1
+            time repo sync -c -q --force-sync --no-clone-bundle --no-tags -j$(nproc --all)
+            
+            echo -e "\nGetting the Device Tree on place"
+            git clone https://$GITHUB_TOKEN@github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME} -b ${CIRCLE_BRANCH} device/${VENDOR}/${CODENAME}
+            
+            echo -e "\nPreparing Delicious Lunch..."
+            export ALLOW_MISSING_DEPENDENCIES=true
+            set +xe
+            source build/envsetup.sh
+            lunch omni_${CODENAME}-${FLAVOR}
+            
+            make -j$(nproc --all) recoveryimage
+            echo -e "\nYummy Recovery is Served.\n"
+            set -xe
+            echo "Ready to Deploy"
+            export TEST_BUILDFILE=$(find /home/builder/out/target/product/${CODENAME}/PitchBlack*-UNOFFICIAL.zip 2>/dev/null)
+            export UPLOAD_PATH=/home/builder/out/target/product/${CODENAME}/upload/
+
+            mkdir ${UPLOAD_PATH}
+            
+            if [[ $TEST_BUILD == 'true' ]] && [[ -n $TEST_BUILDFILE ]]; then
+              echo "Got the Unofficial Build: $TEST_BUILDFILE"
+              cp $TEST_BUILDFILE $UPLOAD_PATH
+              export TEST_BUILDIMG=$(find /home/builder/out/target/product/${CODENAME}/recovery.img 2>/dev/null)
+              cp $TEST_BUILDIMG $UPLOAD_PATH
+              ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -n "Test Release for $(echo $CODENAME)" -b "PBRP $(echo $VERSION)" -c ${CIRCLE_SHA1} -delete ${VERSION}-test ${UPLOAD_PATH}
+            fi
+            
+            echo -e "\n\nAll Done Gracefully\n\n"
+            EOF
+          name: AIO Build
+
 workflows:
   version: 2
-  build_and_test:
+  all_builder:
     jobs:
       - build:
           filters:
             branches:
-              only: android-10.0
-          context: org-global
+              only: "android-10.0"
+          context: personal-envs
