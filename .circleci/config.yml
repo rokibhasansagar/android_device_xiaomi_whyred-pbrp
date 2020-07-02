@@ -61,12 +61,12 @@ jobs:
               -e CIRCLE_SHA1=${CIRCLE_SHA1} \
               -e MANIFEST_BRANCH=${MANIFEST_BRANCH} \
               -e VERSION=${VERSION} \
-              -e MAINTAINER=${MAINTAINER} \
+              -e MAINTAINER="${MAINTAINER}" \
               -e VENDOR=${VENDOR} \
               -e CODENAME=${CODENAME} \
               -e FLAVOR=${FLAVOR} \
               -e TEST_BUILD=${TEST_BUILD} \
-              -e CHANGELOG=${CHANGELOG} \
+              -e CHANGELOG="${CHANGELOG}" \
               -v "/home/alpine/pitchblack:/home/builder/pitchblack/:rw,z" \
               -v "/home/alpine/.ccache:/srv/ccache:rw" \
               fr3akyphantom/droid-builder:focal bash \<< EOF
