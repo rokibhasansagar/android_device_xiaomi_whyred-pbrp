@@ -3,6 +3,16 @@ jobs:
   build:
     docker:
       - image: docker:git
+    environment:
+      MANIFEST_BRANCH: 'android-10.0'
+      VERSION: '2.9.1-test'
+      MAINTAINER: 'PBRP Team'
+      VENDOR: 'xiaomi'
+      CODENAME: 'whyred'
+      FLAVOR: 'eng'
+      TEST_BUILD: 'true'
+      CHANGELOG: |
+        - Initial Build
     working_directory: /home/alpine/pitchblack
     steps:
       - run:
@@ -46,18 +56,18 @@ jobs:
               -e GitHubMail=${GitHubMail} \
               -e GitHubName=${GitHubName} \
               -e GITHUB_TOKEN=${GITHUB_TOKEN} \
-              -e CIRCLE_PROJECT_USERNAME=rokibhasansagar \
-              -e CIRCLE_PROJECT_REPONAME=android_device_xiaomi_whyred-pbrp \
-              -e CIRCLE_BRANCH=android-10.0 \
+              -e CIRCLE_PROJECT_USERNAME=${CIRCLE_PROJECT_USERNAME} \
+              -e CIRCLE_PROJECT_REPONAME=${CIRCLE_PROJECT_REPONAME} \
+              -e CIRCLE_BRANCH=${CIRCLE_BRANCH} \
               -e CIRCLE_SHA1=${CIRCLE_SHA1} \
-              -e MANIFEST_BRANCH="android-10.0" \
-              -e VERSION="2.9.1-test" \
-              -e MAINTAINER="PBRP Team" \
-              -e VENDOR="xiaomi" \
-              -e CODENAME="whyred" \
-              -e FLAVOR="eng" \
-              -e TEST_BUILD="true" \
-              -e CHANGELOG="- Initial Build\n" \
+              -e MANIFEST_BRANCH=${MANIFEST_BRANCH} \
+              -e VERSION=${VERSION} \
+              -e MAINTAINER=${MAINTAINER} \
+              -e VENDOR=${VENDOR} \
+              -e CODENAME=${CODENAME} \
+              -e FLAVOR=${FLAVOR} \
+              -e TEST_BUILD=${TEST_BUILD} \
+              -e CHANGELOG=${CHANGELOG} \
               -v "/home/alpine/pitchblack:/home/builder/pitchblack/:rw,z" \
               -v "/home/alpine/.ccache:/srv/ccache:rw" \
               fr3akyphantom/droid-builder:focal bash \<< EOF
@@ -65,6 +75,7 @@ jobs:
             whoami
             sudo whoami
             pwd
+            echo ${JAVA_OPTS}
             
             # Set GitAuth Infos"
             git config --global user.email $GitHubMail
