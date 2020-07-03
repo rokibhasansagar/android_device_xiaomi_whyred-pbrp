@@ -66,6 +66,8 @@ jobs:
               -v "/home/alpine/pitchblack:/home/builder/pitchblack/:rw,z" \
               -v "/home/alpine/.ccache:/srv/ccache:rw" \
               fr3akyphantom/droid-builder:focal bash \<< EOF
+            set -eo pipefail
+            
             pwd
             
             JAVA_OPTS=${JAVA_OPTS:+" -Xmx8G "}
@@ -102,7 +104,6 @@ jobs:
             
             make -j$(nproc --all) recoveryimage
             echo -e "\nYummy Recovery is Served.\n"
-            set -xe
             echo "Ready to Deploy"
             export TEST_BUILDFILE=$(find /home/builder/out/target/product/${CODENAME}/PitchBlack*-UNOFFICIAL.zip 2>/dev/null)
             export UPLOAD_PATH=/home/builder/out/target/product/${CODENAME}/upload/
