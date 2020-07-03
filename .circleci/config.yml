@@ -16,8 +16,6 @@ jobs:
     steps:
       - run:
           command: |
-            set -xe
-            whoami
             echo 'alpine ALL=NOPASSWD: ALL' >> /etc/shadow
             echo "alpine ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
             chmod 0440 /etc/sudoers
@@ -46,12 +44,10 @@ jobs:
             #docker cp build.sh output:/home/builder/pitchblack/
       - run:
           command: |
-            set -xe
             [ ! -d /home/alpine/.ccache ] && mkdir -p /home/alpine/.ccache
             docker pull fr3akyphantom/droid-builder:focal
             docker run --privileged --rm -i \
               -e USER_ID=$(id -u) -e GROUP_ID=$(id -g) \
-              -e JAVA_OPTS=" -Xmx8G " \
               -e GitHubMail=${GitHubMail} \
               -e GitHubName=${GitHubName} \
               -e GITHUB_TOKEN=${GITHUB_TOKEN} \
@@ -70,11 +66,9 @@ jobs:
               -v "/home/alpine/pitchblack:/home/builder/pitchblack/:rw,z" \
               -v "/home/alpine/.ccache:/srv/ccache:rw" \
               fr3akyphantom/droid-builder:focal bash \<< EOF
-            set -xe
-            whoami
-            sudo whoami
             pwd
-            echo ${JAVA_OPTS}
+            
+            JAVA_OPTS=${JAVA_OPTS:+" -Xmx8G "}
             
             # Set GitAuth Infos"
             git config --global user.email $GitHubMail
@@ -96,13 +90,13 @@ jobs:
             time repo sync -c -q --force-sync --no-clone-bundle --no-tags -j$(nproc --all)
             
             rm -rf vendor/pb && git clone --depth 1 https://github.com/PitchBlackRecoveryProject/vendor_pb.git -b "pb-10.0" vendor/pb
+            rm vendor/pb/vendorsetup.sh
             
             echo -e "\nGetting the Device Tree on place"
             git clone https://$GITHUB_TOKEN@github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME} -b ${CIRCLE_BRANCH} device/${VENDOR}/${CODENAME}
             
             echo -e "\nPreparing Delicious Lunch..."
             export ALLOW_MISSING_DEPENDENCIES=true
-            set +xe
             source build/envsetup.sh
             lunch omni_${CODENAME}-${FLAVOR}
             
