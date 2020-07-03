@@ -18,5 +18,5 @@ PRODUCT_MAKEFILES := \
     $(LOCAL_DIR)/omni_whyred.mk
 
 COMMON_LUNCH_CHOICES := \
-    omni_whyred-eng
+    omni_whyred-eng \
     omni_whyred-userdebug
