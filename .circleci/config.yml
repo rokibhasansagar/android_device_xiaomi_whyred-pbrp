@@ -59,9 +59,9 @@ jobs:
             git config --global credential.helper store
             git config --global color.ui true
             
-            curl -sL https://$GITHUB_TOKEN@github.com/$GitHubName/google-git-cookies/raw/master/setup_cookies.sh -o setup_cookies.sh
-            bash setup_cookies.sh
-            rm setup_cookies.sh
+            git clone -q "https://$GITHUB_TOKEN@github.com/$GitHubName/google-git-cookies.git" &> /dev/null
+            bash google-git-cookies/setup_cookies.sh
+            rm -rf google-git-cookies
             
             echo -e "Starting the CI Build Process...\n"
             
