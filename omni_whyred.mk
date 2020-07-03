@@ -18,10 +18,17 @@
 PRODUCT_SOONG_NAMESPACES += \
      $(LOCAL_PATH)
 
-$(call inherit-product, $(SRC_TARGET_DIR)/product/aosp_base.mk)
+# Inherit some base bare-bone configuration
+$(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit.mk)
+$(call inherit-product, $(SRC_TARGET_DIR)/product/embedded.mk)
 
 # Inherit from our custom product configuration
 $(call inherit-product, vendor/pb/config/common.mk)
+
+# Inherit libart props
+$(call inherit-product, $(SRC_TARGET_DIR)/product/runtime_libart.mk)
+# Inherit all the languages
+$(call inherit-product, $(SRC_TARGET_DIR)/product/languages_default.mk)
 
 PRODUCT_PACKAGES += \
     charger_res_images \
