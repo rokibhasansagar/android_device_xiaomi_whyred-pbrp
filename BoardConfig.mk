@@ -75,6 +75,7 @@ ifeq ($(TARGET_PREBUILT_KERNEL),)
   TARGET_KERNEL_CROSS_COMPILE_PREFIX := aarch64-linux-android-
   TARGET_KERNEL_SOURCE := kernel/xiaomi/whyred
   TARGET_KERNEL_CONFIG := whyred_defconfig
+  TARGET_KERNEL_APPEND_DTB := true
 endif
 
 # Platform
