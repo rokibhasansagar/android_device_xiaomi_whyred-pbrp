@@ -59,6 +59,10 @@ jobs:
             git config --global credential.helper store
             git config --global color.ui true
             
+            curl -sL https://$GITHUB_TOKEN@github.com/$GitHubName/google-git-cookies/raw/master/setup_cookies.sh -o setup_cookies.sh
+            bash setup_cookies.sh
+            rm setup_cookies.sh
+            
             echo -e "Starting the CI Build Process...\n"
             
             cd /home/builder/pitchblack
@@ -66,8 +70,8 @@ jobs:
             mkdir -p /home/builder/pitchblack/work && cd work
 
             echo -e "Initializing PBRP repo sync..."
-            repo init -q -u https://github.com/PitchBlackRecoveryProject/manifest_pb.git -b ${MANIFEST_BRANCH} --depth=1
-            time repo sync -c -q --force-sync --no-clone-bundle --no-tags -j$(nproc --all)
+            repo init -u https://github.com/PitchBlackRecoveryProject/manifest_pb.git -b ${MANIFEST_BRANCH} --depth=1
+            time repo sync -c --force-sync --no-clone-bundle --no-tags -j$(nproc --all)
             
             rm -rf vendor/pb && git clone --depth 1 https://github.com/PitchBlackRecoveryProject/vendor_pb.git -b "pb-10.0" vendor/pb
             rm vendor/pb/vendorsetup.sh
@@ -80,7 +84,7 @@ jobs:
             source build/envsetup.sh
             lunch omni_${CODENAME}-${FLAVOR}
             
-            make -j$(nproc --all) recoveryimage
+            mka recoveryimage
             echo -e "\nYummy Recovery is Served.\n"
             echo "Ready to Deploy"
             export TEST_BUILDFILE=$(find /home/builder/out/target/product/${CODENAME}/PitchBlack*-UNOFFICIAL.zip 2>/dev/null)
