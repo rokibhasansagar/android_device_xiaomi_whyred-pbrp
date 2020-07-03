@@ -2,7 +2,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: docker:git
+      - image: fr3akyphantom/alpine-docker-runner:latest
     environment:
       MANIFEST_BRANCH: 'android-10.0'
       VERSION: '2.9.1-test'
@@ -12,27 +12,8 @@ jobs:
       FLAVOR: 'eng'
       TEST_BUILD: 'true'
       CHANGELOG: "Initial Build"
-    working_directory: /home/alpine/pitchblack
+    working_directory: /home/builder/pitchblack
     steps:
-      - run:
-          command: |
-            echo 'alpine ALL=NOPASSWD: ALL' >> /etc/shadow
-            echo "alpine ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-            chmod 0440 /etc/sudoers
-            echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories
-            echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
-            echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
-            apk add -uU --no-cache --purge \
-              alpine-sdk coreutils build-base util-linux bash sudo shadow curl ca-certificates git \
-              make libc-dev zlib libstdc++ wget wput rsync sshpass openssh openssl gnupg \
-              python3 py3-pip zip unzip tar xz pixz tree gawk p7zip
-            rm -rf /var/cache/apk/* /tmp/*
-            curl -s https://api.github.com/repos/tcnksm/ghr/releases/latest | grep "browser_download_url" | grep "amd64.tar.gz" | cut -d '"' -f 4 | wget -qi -
-            tar -xzf ghr_*_amd64.tar.gz
-            cp ghr_*_amd64/ghr /usr/local/bin/
-            rm -rf ghr_*
-            chmod a+x /usr/local/bin/ghr
-          name: Setup packages in docker container
       - setup_remote_docker:
           version: 19.03.8
       #- run:
@@ -44,7 +25,7 @@ jobs:
             #docker cp build.sh output:/home/builder/pitchblack/
       - run:
           command: |
-            [ ! -d /home/alpine/.ccache ] && mkdir -p /home/alpine/.ccache
+            [ ! -d /home/builder/.ccache ] && mkdir -p /home/builder/.ccache
             docker pull fr3akyphantom/droid-builder:focal
             docker run --privileged --rm -i \
               -e USER_ID=$(id -u) -e GROUP_ID=$(id -g) \
@@ -63,8 +44,8 @@ jobs:
               -e FLAVOR=${FLAVOR} \
               -e TEST_BUILD=${TEST_BUILD} \
               -e CHANGELOG="${CHANGELOG}" \
-              -v "/home/alpine/pitchblack:/home/builder/pitchblack/:rw,z" \
-              -v "/home/alpine/.ccache:/srv/ccache:rw" \
+              -v "/home/builder/pitchblack:/home/builder/pitchblack/:rw,z" \
+              -v "/home/builder/.ccache:/srv/ccache:rw" \
               fr3akyphantom/droid-builder:focal bash \<< EOF
             set -eo pipefail
             
@@ -80,10 +61,7 @@ jobs:
             
             echo -e "Starting the CI Build Process...\n"
             
-            [ -d /home/builder/pitchblack ] && echo "docker-specific home dir is available"
-            [ -d /home/alpine/pitchblack ] && echo "runner-specific home dir is available"
-            
-            cd /home/builder/pitchblack || cd /home/alpine/pitchblack
+            cd /home/builder/pitchblack
 
             mkdir -p /home/builder/pitchblack/work && cd work
 
