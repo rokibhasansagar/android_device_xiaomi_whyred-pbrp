@@ -25,6 +25,7 @@ jobs:
             #docker cp build.sh output:/home/builder/pitchblack/
       - run:
           command: |
+            echo -e "Available CPU Threads - " && nproc --all
             [ ! -d /home/builder/.ccache ] && mkdir -p /home/builder/.ccache
             docker pull fr3akyphantom/droid-builder:focal
             docker run --privileged --rm -i \
@@ -50,6 +51,8 @@ jobs:
             set -eo pipefail
             
             pwd
+            
+            echo -e "Available CPU Threads - " && nproc --all
             
             JAVA_OPTS=${JAVA_OPTS:+" -Xmx8G "}
             
@@ -78,6 +81,12 @@ jobs:
             
             echo -e "\nGetting the Device Tree on place"
             git clone https://$GITHUB_TOKEN@github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME} -b ${CIRCLE_BRANCH} device/${VENDOR}/${CODENAME}
+            
+            du -sh * | sort -h
+            du -sh .repo
+            rm -f device/${VENDOR}/${CODENAME}/recovery/root/sbin/*.so
+            rm -rf development/apps/ development/samples/ packages/apps/
+            du -sh * | sort -h
             
             echo -e "\nPreparing Delicious Lunch..."
             export ALLOW_MISSING_DEPENDENCIES=true
