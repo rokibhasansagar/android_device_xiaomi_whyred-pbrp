@@ -48,11 +48,8 @@ jobs:
               -v "/home/builder/pitchblack:/home/builder/pitchblack/:rw,z" \
               -v "/home/builder/.ccache:/srv/ccache:rw" \
               fr3akyphantom/droid-builder:focal bash \<< EOF
-            set -eo pipefail
             
-            pwd
-            
-            echo -e "Available CPU Threads - " && nproc --all
+            DIR=$(pwd) && echo -e "Current Path is - " && echo ${DIR}
             
             JAVA_OPTS=${JAVA_OPTS:+" -Xmx8G "}
             
@@ -68,9 +65,7 @@ jobs:
             
             echo -e "Starting the CI Build Process...\n"
             
-            cd /home/builder/pitchblack
-
-            mkdir -p /home/builder/pitchblack/work && cd work
+            cd ${DIR} && mkdir android && cd android
 
             echo -e "Initializing PBRP repo sync..."
             repo init -u https://github.com/PitchBlackRecoveryProject/manifest_pb.git -b ${MANIFEST_BRANCH} --depth=1
@@ -80,7 +75,7 @@ jobs:
             rm vendor/pb/vendorsetup.sh
             
             echo -e "\nGetting the Device Tree on place"
-            git clone https://$GITHUB_TOKEN@github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME} -b ${CIRCLE_BRANCH} device/${VENDOR}/${CODENAME}
+            git clone https://$GITHUB_TOKEN@github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME} -b ${CIRCLE_BRANCH} --depth 1 device/${VENDOR}/${CODENAME}
             
             du -sh * | sort -h
             du -sh .repo
@@ -95,17 +90,20 @@ jobs:
             
             mka recoveryimage
             echo -e "\nYummy Recovery is Served.\n"
-            echo "Ready to Deploy"
-            export TEST_BUILDFILE=$(find /home/builder/pitchblack/work/out/target/product/${CODENAME}/PitchBlack*-UNOFFICIAL.zip 2>/dev/null)
-            export UPLOAD_PATH=/home/builder/pitchblack/work/out/target/product/${CODENAME}/upload/
-
-            mkdir -p ${UPLOAD_PATH}
             
+            echo -e "Total Number of CPU Threads Used - " && nproc --all
+            
+            cd ${DIR}/android
+            mkdir upload
+            
+            echo "Ready to Deploy"
+            export TEST_BUILDFILE="out/target/product/${CODENAME}/PitchBlack*-UNOFFICIAL.zip"
+            export TEST_BUILDIMG="out/target/product/${CODENAME}/recovery.img"
+
             echo "Got the Unofficial Build: $TEST_BUILDFILE"
-            cp $TEST_BUILDFILE $UPLOAD_PATH
-            export TEST_BUILDIMG=$(find /home/builder/pitchblack/work/out/target/product/${CODENAME}/recovery.img 2>/dev/null)
-            cp $TEST_BUILDIMG $UPLOAD_PATH
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -n "Test Release for $(echo $CODENAME)" -b "PBRP $(echo $VERSION)" -c ${CIRCLE_SHA1} -delete ${VERSION}-test ${UPLOAD_PATH}
+            cp ${TEST_BUILDFILE} ${TEST_BUILDFILE} ${DIR}/upload/
+            # release
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -n "Test Release for $(echo $CODENAME)" -b "PBRP $(echo $VERSION)" -c ${CIRCLE_SHA1} -delete ${VERSION}-test ${DIR}/upload
             
             echo -e "\n\nAll Done Gracefully\n\n"
             EOF
