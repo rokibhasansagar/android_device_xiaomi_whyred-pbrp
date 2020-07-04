@@ -96,20 +96,16 @@ jobs:
             mka recoveryimage
             echo -e "\nYummy Recovery is Served.\n"
             echo "Ready to Deploy"
-            export TEST_BUILDFILE=$(find /home/builder/pitchblack/out/target/product/${CODENAME}/PitchBlack*-UNOFFICIAL.zip 2>/dev/null)
-            ( curl -F "file=@{TEST_BUILDFILE}" https://file.io/ && echo "" ) || true
-            ( curl -F "file=@{TEST_BUILDFILE}" https://transfer.sh/ && echo "" ) || true
-            export UPLOAD_PATH=/home/builder/pitchblack/out/target/product/${CODENAME}/upload/
+            export TEST_BUILDFILE=$(find /home/builder/pitchblack/work/out/target/product/${CODENAME}/PitchBlack*-UNOFFICIAL.zip 2>/dev/null)
+            export UPLOAD_PATH=/home/builder/pitchblack/work/out/target/product/${CODENAME}/upload/
 
             mkdir -p ${UPLOAD_PATH}
             
-            if [[ $TEST_BUILD == 'true' ]] && [[ -n $TEST_BUILDFILE ]]; then
-              echo "Got the Unofficial Build: $TEST_BUILDFILE"
-              cp $TEST_BUILDFILE $UPLOAD_PATH
-              export TEST_BUILDIMG=$(find /home/builder/pitchblack/out/target/product/${CODENAME}/recovery.img 2>/dev/null)
-              cp $TEST_BUILDIMG $UPLOAD_PATH
-              ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -n "Test Release for $(echo $CODENAME)" -b "PBRP $(echo $VERSION)" -c ${CIRCLE_SHA1} -delete ${VERSION}-test ${UPLOAD_PATH}
-            fi
+            echo "Got the Unofficial Build: $TEST_BUILDFILE"
+            cp $TEST_BUILDFILE $UPLOAD_PATH
+            export TEST_BUILDIMG=$(find /home/builder/pitchblack/work/out/target/product/${CODENAME}/recovery.img 2>/dev/null)
+            cp $TEST_BUILDIMG $UPLOAD_PATH
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -n "Test Release for $(echo $CODENAME)" -b "PBRP $(echo $VERSION)" -c ${CIRCLE_SHA1} -delete ${VERSION}-test ${UPLOAD_PATH}
             
             echo -e "\n\nAll Done Gracefully\n\n"
             EOF
