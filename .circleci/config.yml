@@ -19,7 +19,7 @@ jobs:
       - run:
           name: "CREATE KEEP-ALIVE SHELL"
           command: |
-            cat << EOF > /tmp/act.sh
+            cat \<< EOF > /tmp/act.sh
             #!/bin/bash
             while true; do
               echo "." && sleep 480
