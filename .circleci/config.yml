@@ -77,6 +77,7 @@ jobs:
           name: "EXPORT ENVS"
           command: |
             cd /home/builder/
+            ls -lA .
             printenv | sort -h > environ.txt
             grep environ.txt -e GitHubMail -e GitHubName -e GITHUB_TOKEN \
               -e CIRCLE_PROJECT_USERNAME -e CIRCLE_PROJECT_REPONAME -e CIRCLE_BRANCH -e CIRCLE_SHA1 \
@@ -85,6 +86,7 @@ jobs:
               -e TEST_BUILD -e PB_OFFICIAL -e EXTRA_CMD -e PB_ENGLISH -e CHANGELOG \
               > environments.file
             rm environ.txt
+            cat environments.file
       - setup_remote_docker:
           version: 19.03.8
       - run:
@@ -106,7 +108,10 @@ jobs:
               rm -rf *
             fi
             cd /home/builder/
-            for f in .gitconfig .gitcookies .git-credentials; do docker cp -a -L $f workstation:/home/builder/; done
+            git config --global -l
+            [[ -f .gitconfig ]] && docker cp -a -L .gitconfig workstation:/home/builder/
+            [[ -f .gitcookies ]] && docker cp -a -L .gitcookies workstation:/home/builder/
+            [[ -f .git-credentials ]] && docker cp -a -L .git-credentials workstation:/home/builder/
       - run:
           name: "REMOTE RECOVERY MAKER"
           command: |
@@ -122,8 +127,11 @@ jobs:
               -v "/home/builder/.ccache:/srv/ccache:rw" \
               --workdir /home/builder \
               fr3akyphantom/droid-builder:focal bash \<< EOF
+            set -eo pipefail
+            set
             cd /home/builder/android/
             ls -lA .
+            git config --global -l
             if [[ -n $EXTRA_CMD ]]; then
               eval "$EXTRA_CMD"
               cd /home/builder/android/
@@ -154,9 +162,10 @@ jobs:
           name: "COPY TO PRIMARY AND RELEASE"
           command: |
             cd /home/builder/
-            mkdir -p {fetch,upload}
+            mkdir fetch && mkdir upload
             cd /home/builder/fetch/
             /tmp/act.sh & docker cp -a -L worker:/home/builder/android/out/target/product/${CODENAME}/* .
+            ls -lA .
             echo "Ready to Deploy"
             export TEST_BUILDFILE=$(find $(pwd)/PitchBlack*-UNOFFICIAL.zip 2>/dev/null)
             export TEST_BUILDIMG=$(find $(pwd)/recovery.img 2>/dev/null)
