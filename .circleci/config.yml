@@ -17,14 +17,14 @@ jobs:
     working_directory: /home/builder
     steps:
       - run:
-          name: CREATE KEEP-ALIVE SHELL
+          name: "CREATE KEEP-ALIVE SHELL"
           command: |
             while true; do
               echo "" && sleep 480
             done
           background: true
       - run:
-          name: SANITY CHECKS
+          name: "SANITY CHECKS"
           command: |
             # SANITY CHECKS
             if [[ -z $GitHubMail ]]; then echo -e "You haven't configured GitHub E-Mail Address." && exit 1; fi
@@ -34,40 +34,32 @@ jobs:
             if [[ -z $VENDOR ]]; then echo -e "You haven't configured Vendor name." && exit 1; fi
             if [[ -z $CODENAME ]]; then echo -e "You haven't configured Device Codename." && exit 1; fi
             if [[ -z $BUILD_LUNCH ]] && [[ -z $FLAVOR ]]; then echo -e "Set at least one variable. BUILD_LUNCH or FLAVOR." && exit 1; fi
-            
             # Set GitAuth Infos"
             git config --global user.email $GitHubMail
             git config --global user.name $GitHubName
             git config --global credential.helper store
             git config --global color.ui true
-            
             # Use Google Git Cookies for Smooth repo-sync
             git clone -q "https://$GITHUB_TOKEN@github.com/$GitHubName/google-git-cookies.git" &> /dev/null
             bash google-git-cookies/setup_cookies.sh
             rm -rf google-git-cookies
       - run:
-          name: REPO SYNC
+          name: "REPO SYNC"
           command: |
             cd /home/builder/
-            
             mkdir repository && cd repository
-            
             echo -e "Initializing PBRP repo sync..."
             repo init -q -u https://github.com/PitchBlackRecoveryProject/manifest_pb.git -b ${MANIFEST_BRANCH} --depth 1
             time repo sync -c -q --force-sync --no-clone-bundle --no-tags -j$(nproc --all)
-            
             rm -rf development/apps/ development/samples/ packages/apps/
-            
             rm -rf vendor/pb && git clone https://github.com/PitchBlackRecoveryProject/vendor_pb -b pb-10.0 --depth 1 vendor/pb
             rm vendor/pb/vendorsetup.sh
-            
             echo -e "\nGetting the Device Tree on place"
             if [[ "${CIRCLE_PROJECT_USERNAME}" == "PitchBlackRecoveryProject" ]]; then
               git clone --quiet --progress https://$GitHubName:$GITHUB_TOKEN@github.com/PitchBlackRecoveryProject/${CIRCLE_PROJECT_REPONAME} -b ${CIRCLE_BRANCH} device/${VENDOR}/${CODENAME}
             else
               git clone https://github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME} -b ${CIRCLE_BRANCH} device/${VENDOR}/${CODENAME}
             fi
-            
             if [[ -n ${USE_SECRET_BOOTABLE} ]]; then
               [[ -n ${PBRP_BRANCH} ]] && unset PBRP_BRANCH
               [[ -z ${SECRET_BR} ]] && SECRET_BR="android-9.0"
@@ -76,9 +68,9 @@ jobs:
             elif [[ -n ${PBRP_BRANCH} ]]; then
               rm -rf bootable/recovery
               git clone --quiet --progress https://github.com/PitchBlackRecoveryProject/android_bootable_recovery -b ${PBRP_BRANCH} --single-branch bootable/recovery
-            fi      
+            fi
       - run:
-          name: EXPORT ENVS
+          name: "EXPORT ENVS"
           command: |
             cd /home/builder/
             printenv | sort -h > environ.txt
@@ -92,7 +84,7 @@ jobs:
       - setup_remote_docker:
           version: 19.03.8
       - run:
-          name: COPY TO DOCKER REMOTE
+          name: "COPY TO DOCKER REMOTE"
           command: |
             cd /home/builder/repository/
             ls -lA .
@@ -107,7 +99,7 @@ jobs:
             [[ -f /home/builder/.gitcookies ]] && docker cp /home/builder/.gitcookies -a -L workstation:/home/builder/
             [[ -f /home/builder/.git-credentials ]] && docker cp /home/builder/.git-credentials -a -L workstation:/home/builder/
       - run:
-          name: REMOTE RECOVERY MAKER
+          name: "REMOTE RECOVERY MAKER"
           command: |
             [ ! -d /home/builder/.ccache ] && mkdir -p /home/builder/.ccache
             cd /home/builder
@@ -121,25 +113,18 @@ jobs:
               -v "/home/builder/.ccache:/srv/ccache:rw" \
               --workdir /home/builder \
               fr3akyphantom/droid-builder:focal bash \<< EOF
-            
             cd /home/builder/android/
             ls -lA .
-            
             if [[ -n $EXTRA_CMD ]]; then
               eval "$EXTRA_CMD"
               cd /home/builder/android/
             fi
-            
             JAVA_OPTS=${JAVA_OPTS:+" -Xmx8G "}
-            
             echo -en "Current Username is - " && whoami
-            
             THREADCOUNT=$(nproc --all)
             echo -en "Available CPU Threads - " && echo ${THREADCOUNT}
-            
             echo -e "\nGetting the Device Tree on place"
             git clone https://$GITHUB_TOKEN@github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME} -b ${CIRCLE_BRANCH} --depth 1 device/${VENDOR}/${CODENAME}
-            
             echo -e "\nPreparing Delicious Lunch..."
             export ALLOW_MISSING_DEPENDENCIES=true
             source build/envsetup.sh
@@ -148,38 +133,29 @@ jobs:
             elif [[ -n $FLAVOR ]]; then
               lunch omni_${CODENAME}-${FLAVOR}
             fi
-            
             if [[ ${THREADCOUNT} -gt 8 ]]; then MAKEJOB=${THREADCOUNT}
             elif [[ ${THREADCOUNT} -gt 4 && ${THREADCOUNT} -lt 8 ]]; then MAKEJOB=8
             elif [[ ${THREADCOUNT} -eq 4 ]]; then MAKEJOB=${THREADCOUNT}
             elif [[ ${THREADCOUNT} -eq 2 ]]; then MAKEJOB=4
             fi
-            
             make -j${MAKEJOB} recoveryimage
             echo -e "\nYummy Recovery is Served.\n"
-            
             EOF
       - run:
-          name: COPY TO PRIMARY AND RELEASE
+          name: "COPY TO PRIMARY AND RELEASE"
           comand: |
             cd /home/builder/
-            
             mkdir -p {fetch,upload}
             cd /home/builder/fetch/
-            
             docker cp -a -L worker:/home/builder/android/out/target/product/${CODENAME}/* .
-            
             echo "Ready to Deploy"
             export TEST_BUILDFILE=$(find $(pwd)/PitchBlack*-UNOFFICIAL.zip 2>/dev/null)
             export TEST_BUILDIMG=$(find $(pwd)/recovery.img 2>/dev/null)
-            
             cd /home/builder/
-            
             echo "Got the Unofficial Build: $TEST_BUILDFILE"
             cp ${TEST_BUILDFILE} ${TEST_BUILDIMG} /home/builder/upload
             # release
             ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -n "Test Release for $(echo $CODENAME)" -b "PBRP $(echo $VERSION)" -c ${CIRCLE_SHA1} -delete ${VERSION}-test /home/builder/upload
-            
             echo -e "\n\nAll Done Gracefully\n\n"
 
 workflows:
