@@ -143,7 +143,7 @@ jobs:
             EOF
       - run:
           name: "COPY TO PRIMARY AND RELEASE"
-          comand: |
+          command: |
             cd /home/builder/
             mkdir -p {fetch,upload}
             cd /home/builder/fetch/
