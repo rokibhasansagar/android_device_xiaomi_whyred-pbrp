@@ -19,12 +19,14 @@ jobs:
       - run:
           name: "CREATE KEEP-ALIVE SHELL"
           command: |
+            [[ ! -d /tmp ]] && mkdir /tmp
             cat \<< EOF > /tmp/act.sh
             #!/bin/bash
             while true; do
               echo "." && sleep 480
             done
             EOF
+            chmod a+x /tmp/act.sh
       - run:
           name: "SANITY CHECKS"
           command: |
@@ -108,7 +110,7 @@ jobs:
       - run:
           name: "REMOTE RECOVERY MAKER"
           command: |
-            [ ! -d /home/builder/.ccache ] && mkdir -p /home/builder/.ccache
+            [[ ! -d /home/builder/.ccache ]] && mkdir -p /home/builder/.ccache
             cd /home/builder
             mkdir android && cd android
             /tmp/act.sh & docker run --privileged -it --name worker \
@@ -154,7 +156,7 @@ jobs:
             cd /home/builder/
             mkdir -p {fetch,upload}
             cd /home/builder/fetch/
-            docker cp -a -L worker:/home/builder/android/out/target/product/${CODENAME}/* .
+            /tmp/act.sh & docker cp -a -L worker:/home/builder/android/out/target/product/${CODENAME}/* .
             echo "Ready to Deploy"
             export TEST_BUILDFILE=$(find $(pwd)/PitchBlack*-UNOFFICIAL.zip 2>/dev/null)
             export TEST_BUILDIMG=$(find $(pwd)/recovery.img 2>/dev/null)
