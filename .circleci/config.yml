@@ -73,6 +73,7 @@ jobs:
               rm -rf bootable/recovery
               git clone --quiet --progress https://github.com/PitchBlackRecoveryProject/android_bootable_recovery -b ${PBRP_BRANCH} --single-branch bootable/recovery
             fi
+            ls -lA .
             echo -en "act-shell pid number is - " && cat /tmp/act.pid
             ACTPID=$(cat /tmp/act.pid) && kill -s SIGTERM ${ACTPID}
       - run:
@@ -95,7 +96,6 @@ jobs:
           name: "COPY TO DOCKER REMOTE"
           command: |
             cd /home/builder/repository/
-            ls -lA .
             du -sh .repo && du -sh *
             docker pull fr3akyphantom/droid-builder:focal
             docker create --name workstation --volume /home/builder/android fr3akyphantom/droid-builder:focal bash
@@ -104,18 +104,10 @@ jobs:
               echo -e "${d} is copied in remote"
             done
             /tmp/act.sh & docker cp -a -L .repo workstation:/home/builder/android/
-            echo -e "Repo is copied to remote"
-            if [[ "$?" = "0" ]]; then
-              echo -e "Successfully Copied onto Remote Container"
-              rm -rf *
-              echo -e "Deletion of synced primary files done"
-            fi
+            echo -e "Deleting synced primary files..."
+            /tmp/act.sh & rm -rf *
+            echo -e "Copy and cleanup done"
             cd /home/builder/
-            git config --global -l
-            [[ -f .gitconfig ]] && docker cp -a -L .gitconfig workstation:/home/builder/
-            [[ -f .gitcookies ]] && docker cp -a -L .gitcookies workstation:/home/builder/
-            [[ -f .git-credentials ]] && docker cp -a -L .git-credentials workstation:/home/builder/
-            echo "Copy Done"
             echo -en "act-shell pid number is - " && cat /tmp/act.pid
             ACTPID=$(cat /tmp/act.pid) && kill -s SIGTERM ${ACTPID}
       - run:
@@ -136,8 +128,14 @@ jobs:
             set -eo pipefail
             set
             cd /home/builder/android/
+            ln -sf build/soong/root.bp Android.bp
+            ln -sf build/soong/bootstrap.bash bootstrap.bash
             ls -lA .
-            git config --global -l
+            # Set GitAuth Infos again"
+            git config --global user.email $GitHubMail
+            git config --global user.name $GitHubName
+            git config --global credential.helper store
+            git config --global color.ui true
             if [[ -n $EXTRA_CMD ]]; then
               eval "$EXTRA_CMD"
               cd /home/builder/android/
