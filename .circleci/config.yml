@@ -56,8 +56,8 @@ jobs:
               -v "/home/builder/.ccache:/srv/ccache:rw" \
               --workdir /home/builder \
               fr3akyphantom/droid-builder:focal bash \<< EOF
-            set -eo pipefail
-            set
+            set -xe
+            cd /home/builder
             mkdir android && cd android
             # SANITY CHECKS & GIT SETUP
             if [[ -z $GitHubMail ]]; then echo -e "You haven't configured GitHub E-Mail Address." && exit 1; fi
