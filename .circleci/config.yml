@@ -22,16 +22,15 @@ jobs:
             [[ ! -d /tmp ]] && mkdir /tmp
             cat \<< EOF > /tmp/act.sh
             #!/bin/bash
-            echo $$ > /tmp/act.pid
+            echo "\$$" > /tmp/act.pid
             while true; do
               echo "." && sleep 300
             done
             EOF
             chmod a+x /tmp/act.sh
       - run:
-          name: "SANITY CHECKS"
+          name: "SANITY CHECKS & GIT SETUP"
           command: |
-            # SANITY CHECKS
             if [[ -z $GitHubMail ]]; then echo -e "You haven't configured GitHub E-Mail Address." && exit 1; fi
             if [[ -z $GitHubName ]]; then echo -e "You haven't configured GitHub Username." && exit 1; fi
             if [[ -z $GITHUB_TOKEN ]]; then echo -e "You haven't configured GitHub Token.\nWithout it, recovery can't be published." && exit 1; fi
@@ -48,6 +47,7 @@ jobs:
             git clone -q "https://$GITHUB_TOKEN@github.com/$GitHubName/google-git-cookies.git" &> /dev/null
             /tmp/act.sh & bash google-git-cookies/setup_cookies.sh
             rm -rf google-git-cookies
+            echo -e "act-shell pid number is - " && cat /tmp/act.pid
             ACTPID=$(cat /tmp/act.pid) && kill -s SIGTERM ${ACTPID}
       - run:
           name: "REPO SYNC"
@@ -75,6 +75,7 @@ jobs:
               rm -rf bootable/recovery
               git clone --quiet --progress https://github.com/PitchBlackRecoveryProject/android_bootable_recovery -b ${PBRP_BRANCH} --single-branch bootable/recovery
             fi
+            echo -e "act-shell pid number is - " && cat /tmp/act.pid
             ACTPID=$(cat /tmp/act.pid) && kill -s SIGTERM ${ACTPID}
       - run:
           name: "EXPORT ENVS"
@@ -117,6 +118,7 @@ jobs:
             [[ -f .gitcookies ]] && docker cp -a -L .gitcookies workstation:/home/builder/
             [[ -f .git-credentials ]] && docker cp -a -L .git-credentials workstation:/home/builder/
             echo "Copy Done"
+            echo -e "act-shell pid number is - " && cat /tmp/act.pid
             ACTPID=$(cat /tmp/act.pid) && kill -s SIGTERM ${ACTPID}
       - run:
           name: "REMOTE RECOVERY MAKER"
@@ -164,6 +166,7 @@ jobs:
             make -j${MAKEJOB} recoveryimage
             echo -e "\nYummy Recovery is Served.\n"
             EOF
+            echo -e "act-shell pid number is - " && cat /tmp/act.pid
             ACTPID=$(cat /tmp/act.pid) && kill -s SIGTERM ${ACTPID}
       - run:
           name: "COPY TO PRIMARY AND RELEASE"
@@ -182,6 +185,7 @@ jobs:
             # release
             ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -n "Test Release for $(echo $CODENAME)" -b "PBRP $(echo $VERSION)" -c ${CIRCLE_SHA1} -delete ${VERSION}-test /home/builder/upload
             echo -e "\n\nAll Done Gracefully\n\n"
+            echo -e "act-shell pid number is - " && cat /tmp/act.pid
             ACTPID=$(cat /tmp/act.pid) && kill -s SIGTERM ${ACTPID}
 
 workflows:
