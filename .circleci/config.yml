@@ -73,13 +73,13 @@ jobs:
             bash google-git-cookies/setup_cookies.sh
             rm -rf google-git-cookies
             # threads
-            export THREADCOUNT=$(nproc --all)
-            if [[ ${THREADCOUNT} -gt 8 ]]; then MAKEJOB="${THREADCOUNT}"
-            elif [[ ${THREADCOUNT} -gt 4 ]] && [[ ${THREADCOUNT} -lt 8 ]]; then MAKEJOB=8
-            elif [[ ${THREADCOUNT} -eq 4 ]]; then MAKEJOB="${THREADCOUNT}"
-            elif [[ ${THREADCOUNT} -eq 2 ]]; then MAKEJOB=4
+            THREADCOUNT="$(nproc --all)"
+            if [[ "$THREADCOUNT" -gt "8" ]]; then MAKEJOB="$THREADCOUNT"
+            elif [[ "$THREADCOUNT" -gt "4" ]] && [[ "$THREADCOUNT" -lt "8" ]]; then MAKEJOB="8"
+            elif [[ "$THREADCOUNT" -eq "4" ]]; then MAKEJOB="$THREADCOUNT"
+            elif [[ "$THREADCOUNT" -eq "2" ]]; then MAKEJOB="4"
             fi
-            echo ${MAKEJOB}
+            echo "$MAKEJOB"
             # sync
             echo -e "Initializing PBRP repo sync..."
             repo init -q -u https://github.com/PitchBlackRecoveryProject/manifest_pb.git -b ${MANIFEST_BRANCH} --depth 1
