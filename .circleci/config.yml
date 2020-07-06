@@ -128,8 +128,9 @@ jobs:
             set -eo pipefail
             set
             cd /home/builder/android/
-            ln -sf build/soong/root.bp Android.bp
-            ln -sf build/soong/bootstrap.bash bootstrap.bash
+            sudo chown -Rf builder *
+            sudo ln -sf build/soong/root.bp Android.bp
+            sudo ln -sf build/soong/bootstrap.bash bootstrap.bash
             ls -lA .
             # Set GitAuth Infos again"
             git config --global user.email $GitHubMail
