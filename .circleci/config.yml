@@ -75,7 +75,7 @@ jobs:
             # threads
             export THREADCOUNT=$(nproc --all)
             if [[ ${THREADCOUNT} -gt 8 ]]; then MAKEJOB="${THREADCOUNT}"
-            elif [[ ${THREADCOUNT} -gt 4 && ${THREADCOUNT} -lt 8 ]]; then MAKEJOB=8
+            elif [[ ${THREADCOUNT} -gt 4 ]] && [[ ${THREADCOUNT} -lt 8 ]]; then MAKEJOB=8
             elif [[ ${THREADCOUNT} -eq 4 ]]; then MAKEJOB="${THREADCOUNT}"
             elif [[ ${THREADCOUNT} -eq 2 ]]; then MAKEJOB=4
             fi
