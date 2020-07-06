@@ -22,6 +22,7 @@ jobs:
             [[ ! -d /tmp ]] && mkdir /tmp
             cat \<< EOF > /tmp/act.sh
             #!/bin/bash
+            echo $$ > /tmp/act.pid
             while true; do
               echo "." && sleep 300
             done
@@ -47,6 +48,7 @@ jobs:
             git clone -q "https://$GITHUB_TOKEN@github.com/$GitHubName/google-git-cookies.git" &> /dev/null
             bash google-git-cookies/setup_cookies.sh
             rm -rf google-git-cookies
+            SELFPID=$(echo $$) && kill -s SIGTERM ${SELFPID}
       - run:
           name: "REPO SYNC"
           command: |
@@ -73,7 +75,7 @@ jobs:
               rm -rf bootable/recovery
               git clone --quiet --progress https://github.com/PitchBlackRecoveryProject/android_bootable_recovery -b ${PBRP_BRANCH} --single-branch bootable/recovery
             fi
-            SELFPID=$(echo $$) && kill -9 ${SELFPID}
+            ACTPID=$(cat /tmp/act.pid) && kill -s SIGTERM ${ACTPID}
       - run:
           name: "EXPORT ENVS"
           command: |
@@ -115,7 +117,7 @@ jobs:
             [[ -f .gitcookies ]] && docker cp -a -L .gitcookies workstation:/home/builder/
             [[ -f .git-credentials ]] && docker cp -a -L .git-credentials workstation:/home/builder/
             echo "Copy Done"
-            SELFPID=$(echo $$) && kill -9 ${SELFPID}
+            ACTPID=$(cat /tmp/act.pid) && kill -s SIGTERM ${ACTPID}
       - run:
           name: "REMOTE RECOVERY MAKER"
           command: |
@@ -162,7 +164,7 @@ jobs:
             make -j${MAKEJOB} recoveryimage
             echo -e "\nYummy Recovery is Served.\n"
             EOF
-            SELFPID=$(echo $$) && kill -9 ${SELFPID}
+            ACTPID=$(cat /tmp/act.pid) && kill -s SIGTERM ${ACTPID}
       - run:
           name: "COPY TO PRIMARY AND RELEASE"
           command: |
@@ -180,7 +182,7 @@ jobs:
             # release
             ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -n "Test Release for $(echo $CODENAME)" -b "PBRP $(echo $VERSION)" -c ${CIRCLE_SHA1} -delete ${VERSION}-test /home/builder/upload
             echo -e "\n\nAll Done Gracefully\n\n"
-            SELFPID=$(echo $$) && kill -9 ${SELFPID}
+            ACTPID=$(cat /tmp/act.pid) && kill -s SIGTERM ${ACTPID}
 
 workflows:
   version: 2
