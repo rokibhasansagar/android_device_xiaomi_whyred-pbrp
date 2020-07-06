@@ -19,7 +19,7 @@ jobs:
         - Fix recovery.fstab inclusion
         - Modify build product configuration
         - Remove a few prebuilt *.so binary from sbin, they are built from source
-    working_directory: /home/builder
+    working_directory: /home/builder/
     steps:
       - setup_remote_docker:
           version: 19.03.8
@@ -27,9 +27,8 @@ jobs:
           name: "ALL IN REMOTE"
           command: |
             [[ ! -d /home/builder/.ccache ]] && mkdir -p /home/builder/.ccache
-            cd /home/builder
-            mkdir android && cd android
-            docker run --privileged -i --name worker \
+            cd /home/builder/
+            docker run --privileged -i --name worker --user builder \
               -e USER_ID=$(id -u) -e GROUP_ID=$(id -g) \
               -e GitHubMail="${GitHubMail}" -e GitHubName="${GitHubName}" -e GITHUB_TOKEN="${GITHUB_TOKEN}" \
               -e CIRCLE_PROJECT_USERNAME="${CIRCLE_PROJECT_USERNAME}" -e CIRCLE_PROJECT_REPONAME="${CIRCLE_PROJECT_REPONAME}" \
@@ -41,11 +40,9 @@ jobs:
               -e MAINTAINER="${MAINTAINER}" -e CHANGELOG="${CHANGELOG}" \
               -e TEST_BUILD="${TEST_BUILD}" -e PB_OFFICIAL="${PB_OFFICIAL}" \
               -e PB_ENGLISH="${PB_ENGLISH}" -e EXTRA_CMD="${EXTRA_CMD}" \
-              -v "/home/builder/bin/:/home/builder/bin/:rw,z" \
-              -v "/home/builder/:/home/builder/:rw,z" \
-              -v "${pwd}:/home/builder/android/:rw,z" \
+              -v "${pwd}:/home/builder/:rw,Z" \
               -v "/home/builder/.ccache:/srv/ccache:rw" \
-              --workdir /home/builder/android/ \
+              --workdir /home/builder/ \
               fr3akyphantom/droid-builder:focal bash \<< EOF
             curl -sL https://gist.github.com/rokibhasansagar/6177067d1f610431ab4f419db86a2b4b/raw/build.remote.sh -o build.sh
             source build.sh
