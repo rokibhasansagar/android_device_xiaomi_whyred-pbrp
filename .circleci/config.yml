@@ -43,7 +43,7 @@ jobs:
             cd /home/builder
             mkdir android && cd android
             /tmp/act.sh & docker run --privileged -i --name worker \
-              -e USER_ID=0 -e GROUP_ID=0 \
+              -e USER_ID=$(id -u) -e GROUP_ID=$(id -g) \
               -e GitHubMail="${GitHubMail}" -e GitHubName="${GitHubName}" -e GITHUB_TOKEN="${GITHUB_TOKEN}" \
               -e CIRCLE_PROJECT_USERNAME="${CIRCLE_PROJECT_USERNAME}" -e CIRCLE_PROJECT_REPONAME="${CIRCLE_PROJECT_REPONAME}" \
               -e CIRCLE_BRANCH="${CIRCLE_BRANCH}" -e CIRCLE_SHA1="${CIRCLE_SHA1}" \
@@ -61,6 +61,8 @@ jobs:
               fr3akyphantom/droid-builder:focal bash \<< EOF
             set -xe
             whoami
+            uname -a
+            
             cd /home/builder
             mkdir android && cd android
             # Set GitAuth Infos"
@@ -73,11 +75,11 @@ jobs:
             bash google-git-cookies/setup_cookies.sh
             rm -rf google-git-cookies
             # threads
-            THREADCOUNT="$(nproc --all)"
-            if [[ "$THREADCOUNT" -gt "8" ]]; then MAKEJOB="$THREADCOUNT"
-            elif [[ "$THREADCOUNT" -gt "4" ]] && [[ "$THREADCOUNT" -lt "8" ]]; then MAKEJOB="8"
-            elif [[ "$THREADCOUNT" -eq "4" ]]; then MAKEJOB="$THREADCOUNT"
-            elif [[ "$THREADCOUNT" -eq "2" ]]; then MAKEJOB="4"
+            THREADCOUNT="$(nproc --all)" && export THREADCOUNT
+            if [[ "$THREADCOUNT" -gt 8 ]]; then MAKEJOB="$THREADCOUNT"
+            elif [[ "$THREADCOUNT" -gt 4 ]] && [[ "$THREADCOUNT" -lt 8 ]]; then MAKEJOB=8
+            elif [[ "$THREADCOUNT" -eq 4 ]]; then MAKEJOB="$THREADCOUNT"
+            elif [[ "$THREADCOUNT" -eq 2 ]]; then MAKEJOB=4
             fi
             echo "$MAKEJOB"
             # sync
