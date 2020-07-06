@@ -23,7 +23,7 @@ jobs:
             cat \<< EOF > /tmp/act.sh
             #!/bin/bash
             while true; do
-              echo "." && sleep 480
+              echo "." && sleep 300
             done
             EOF
             chmod a+x /tmp/act.sh
@@ -73,6 +73,7 @@ jobs:
               rm -rf bootable/recovery
               git clone --quiet --progress https://github.com/PitchBlackRecoveryProject/android_bootable_recovery -b ${PBRP_BRANCH} --single-branch bootable/recovery
             fi
+            SELFPID=$(echo $$) && kill -9 ${SELFPID}
       - run:
           name: "EXPORT ENVS"
           command: |
@@ -106,12 +107,15 @@ jobs:
             if [[ "$?" = "0" ]]; then
               echo -e "Successfully Copied onto Remote Container"
               rm -rf *
+              echo -e "Deletion of synced primary files done"
             fi
             cd /home/builder/
             git config --global -l
             [[ -f .gitconfig ]] && docker cp -a -L .gitconfig workstation:/home/builder/
             [[ -f .gitcookies ]] && docker cp -a -L .gitcookies workstation:/home/builder/
             [[ -f .git-credentials ]] && docker cp -a -L .git-credentials workstation:/home/builder/
+            echo "Copy Done"
+            SELFPID=$(echo $$) && kill -9 ${SELFPID}
       - run:
           name: "REMOTE RECOVERY MAKER"
           command: |
@@ -158,6 +162,7 @@ jobs:
             make -j${MAKEJOB} recoveryimage
             echo -e "\nYummy Recovery is Served.\n"
             EOF
+            SELFPID=$(echo $$) && kill -9 ${SELFPID}
       - run:
           name: "COPY TO PRIMARY AND RELEASE"
           command: |
@@ -175,6 +180,7 @@ jobs:
             # release
             ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -n "Test Release for $(echo $CODENAME)" -b "PBRP $(echo $VERSION)" -c ${CIRCLE_SHA1} -delete ${VERSION}-test /home/builder/upload
             echo -e "\n\nAll Done Gracefully\n\n"
+            SELFPID=$(echo $$) && kill -9 ${SELFPID}
 
 workflows:
   version: 2
