@@ -18,22 +18,9 @@ jobs:
         - Use COMMON_LUNCH_CHOICES instead of vendorsetup
         - Fix recovery.fstab inclusion
         - Modify build product configuration
-        - Remove prebuilt *.so binary from sbin, they are built from source
-      # EXTRA_CMD: "rm -f device/${VENDOR}/${CODENAME}/recovery/root/sbin/*.so"
+        - Remove a few prebuilt *.so binary from sbin, they are built from source
     working_directory: /home/builder
     steps:
-      - run:
-          name: "CREATE KEEP-ALIVE SHELL"
-          command: |
-            [[ ! -d /tmp ]] && mkdir /tmp
-            cat \<< EOF > /tmp/act.sh
-            #!/bin/bash
-            echo "\$$" > /tmp/act.pid
-            while true; do
-              echo "." && sleep 300
-            done
-            EOF
-            chmod a+x /tmp/act.sh
       - setup_remote_docker:
           version: 19.03.8
       - run:
@@ -42,7 +29,7 @@ jobs:
             [[ ! -d /home/builder/.ccache ]] && mkdir -p /home/builder/.ccache
             cd /home/builder
             mkdir android && cd android
-            /tmp/act.sh & docker run --privileged -i --name worker \
+            docker run --privileged -i --name worker \
               -e USER_ID=$(id -u) -e GROUP_ID=$(id -g) \
               -e GitHubMail="${GitHubMail}" -e GitHubName="${GitHubName}" -e GITHUB_TOKEN="${GITHUB_TOKEN}" \
               -e CIRCLE_PROJECT_USERNAME="${CIRCLE_PROJECT_USERNAME}" -e CIRCLE_PROJECT_REPONAME="${CIRCLE_PROJECT_REPONAME}" \
@@ -54,17 +41,21 @@ jobs:
               -e MAINTAINER="${MAINTAINER}" -e CHANGELOG="${CHANGELOG}" \
               -e TEST_BUILD="${TEST_BUILD}" -e PB_OFFICIAL="${PB_OFFICIAL}" \
               -e PB_ENGLISH="${PB_ENGLISH}" -e EXTRA_CMD="${EXTRA_CMD}" \
+              -v "/home/builder/bin/:/home/builder/bin/:rw,z" \
               -v "/home/builder/:/home/builder/:rw,z" \
               -v "${pwd}:/home/builder/android/:rw,z" \
               -v "/home/builder/.ccache:/srv/ccache:rw" \
-              --workdir /home/builder \
+              --workdir /home/builder/android/ \
               fr3akyphantom/droid-builder:focal bash \<< EOF
             set -xe
             id
-            cat /etc/os-release 
-            cd /home/builder
-            ls -lA /home/builder/bin/
-            mkdir android && cd android
+            cat /etc/os-release
+            echo "${PATH}"
+            cd /home/builder/
+            ls -la ../ && ls -la .
+            which repo
+            which make
+            ( mkdir -p android || true ) && cd android
             # Set GitAuth Infos"
             git config --global user.email $GitHubMail
             git config --global user.name $GitHubName
@@ -84,8 +75,8 @@ jobs:
             echo "$MAKEJOB"
             # sync
             echo -e "Initializing PBRP repo sync..."
-            repo init -q -u https://github.com/PitchBlackRecoveryProject/manifest_pb.git -b ${MANIFEST_BRANCH} --depth 1
-            repo sync -c -q --force-sync --no-clone-bundle --no-tags -j${MAKEJOB}
+            repo init -u https://github.com/PitchBlackRecoveryProject/manifest_pb.git -b ${MANIFEST_BRANCH} --depth 1
+            repo sync -c --force-sync --no-clone-bundle --no-tags -j${MAKEJOB}
             # clean unneeded files
             rm -rf development/apps/ development/samples/ packages/apps/
             # use pb-10.0
@@ -132,8 +123,6 @@ jobs:
             ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -n "Test Release for $(echo $CODENAME)" -b "PBRP $(echo $VERSION)" -c ${CIRCLE_SHA1} -delete ${VERSION}-test upload/
             echo -e "\n\nAll Done Gracefully\n\n"
             EOF
-            echo -en "act-shell pid number is - " && cat /tmp/act.pid
-            ACTPID=$(cat /tmp/act.pid) && kill -s SIGTERM ${ACTPID}
 
 workflows:
   version: 2
