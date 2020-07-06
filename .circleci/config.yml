@@ -60,9 +60,8 @@ jobs:
               --workdir /home/builder \
               fr3akyphantom/droid-builder:focal bash \<< EOF
             set -xe
-            whoami
-            uname -a
-            
+            id
+            cat /etc/os-release 
             cd /home/builder
             mkdir android && cd android
             # Set GitAuth Infos"
@@ -85,7 +84,7 @@ jobs:
             # sync
             echo -e "Initializing PBRP repo sync..."
             repo init -q -u https://github.com/PitchBlackRecoveryProject/manifest_pb.git -b ${MANIFEST_BRANCH} --depth 1
-            /tmp/act.sh & repo sync -c -q --force-sync --no-clone-bundle --no-tags -j${MAKEJOB}
+            repo sync -c -q --force-sync --no-clone-bundle --no-tags -j${MAKEJOB}
             # clean unneeded files
             rm -rf development/apps/ development/samples/ packages/apps/
             # use pb-10.0
