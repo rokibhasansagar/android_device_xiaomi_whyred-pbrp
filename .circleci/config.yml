@@ -49,7 +49,7 @@ jobs:
             cd /home/builder
             mkdir android && cd android
             /tmp/act.sh & docker run --privileged -i --name worker \
-              --user builder -e USER_ID=1000 -e GROUP_ID=1000 \
+              -e USER_ID=0 -e GROUP_ID=0 \
               --env-file "/home/builder/environments.file" \
               -v "/home/builder/:/home/builder/:rw,z" \
               -v "${pwd}:/home/builder/android/:rw,z" \
@@ -57,16 +57,9 @@ jobs:
               --workdir /home/builder \
               fr3akyphantom/droid-builder:focal bash \<< EOF
             set -xe
+            whoami
             cd /home/builder
             mkdir android && cd android
-            # SANITY CHECKS & GIT SETUP
-            if [[ -z $GitHubMail ]]; then echo -e "You haven't configured GitHub E-Mail Address." && exit 1; fi
-            if [[ -z $GitHubName ]]; then echo -e "You haven't configured GitHub Username." && exit 1; fi
-            if [[ -z $GITHUB_TOKEN ]]; then echo -e "You haven't configured GitHub Token.\nWithout it, recovery can't be published." && exit 1; fi
-            if [[ -z $MANIFEST_BRANCH ]]; then echo -e "You haven't configured PitchBlack Recovery Project Manifest Branch." && exit 1; fi
-            if [[ -z $VENDOR ]]; then echo -e "You haven't configured Vendor name." && exit 1; fi
-            if [[ -z $CODENAME ]]; then echo -e "You haven't configured Device Codename." && exit 1; fi
-            if [[ -z $BUILD_LUNCH ]] && [[ -z $FLAVOR ]]; then echo -e "Set at least one variable. BUILD_LUNCH or FLAVOR." && exit 1; fi
             # Set GitAuth Infos"
             git config --global user.email $GitHubMail
             git config --global user.name $GitHubName
@@ -126,8 +119,8 @@ jobs:
             make -j${MAKEJOB} recoveryimage
             echo -e "\nYummy Recovery is Served.\n"
             # deploy
-            export TEST_BUILDFILE=$(find $(pwd)/out/target/product/${CODENAME}/PitchBlack*-UNOFFICIAL.zip 2>/dev/null)
-            export TEST_BUILDIMG=$(find $(pwd)/out/target/product/${CODENAME}/recovery.img 2>/dev/null)
+            export TEST_BUILDFILE=out/target/product/${CODENAME}/PitchBlack*-UNOFFICIAL.zip
+            export TEST_BUILDIMG=out/target/product/${CODENAME}/recovery.img
             mkdir upload
             cp ${TEST_BUILDFILE} ${TEST_BUILDIMG} upload/
             # release
