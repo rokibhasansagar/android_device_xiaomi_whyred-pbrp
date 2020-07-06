@@ -45,10 +45,8 @@ jobs:
             git config --global color.ui true
             # Use Google Git Cookies for Smooth repo-sync
             git clone -q "https://$GITHUB_TOKEN@github.com/$GitHubName/google-git-cookies.git" &> /dev/null
-            /tmp/act.sh & bash google-git-cookies/setup_cookies.sh
+            bash google-git-cookies/setup_cookies.sh
             rm -rf google-git-cookies
-            echo -e "act-shell pid number is - " && cat /tmp/act.pid
-            ACTPID=$(cat /tmp/act.pid) && kill -s SIGTERM ${ACTPID}
       - run:
           name: "REPO SYNC"
           command: |
@@ -75,7 +73,7 @@ jobs:
               rm -rf bootable/recovery
               git clone --quiet --progress https://github.com/PitchBlackRecoveryProject/android_bootable_recovery -b ${PBRP_BRANCH} --single-branch bootable/recovery
             fi
-            echo -e "act-shell pid number is - " && cat /tmp/act.pid
+            echo -en "act-shell pid number is - " && cat /tmp/act.pid
             ACTPID=$(cat /tmp/act.pid) && kill -s SIGTERM ${ACTPID}
       - run:
           name: "EXPORT ENVS"
@@ -118,7 +116,7 @@ jobs:
             [[ -f .gitcookies ]] && docker cp -a -L .gitcookies workstation:/home/builder/
             [[ -f .git-credentials ]] && docker cp -a -L .git-credentials workstation:/home/builder/
             echo "Copy Done"
-            echo -e "act-shell pid number is - " && cat /tmp/act.pid
+            echo -en "act-shell pid number is - " && cat /tmp/act.pid
             ACTPID=$(cat /tmp/act.pid) && kill -s SIGTERM ${ACTPID}
       - run:
           name: "REMOTE RECOVERY MAKER"
@@ -126,7 +124,7 @@ jobs:
             [[ ! -d /home/builder/.ccache ]] && mkdir -p /home/builder/.ccache
             cd /home/builder
             mkdir android && cd android
-            /tmp/act.sh & docker run --privileged -it --name worker \
+            /tmp/act.sh & docker run --privileged -i --name worker \
               --user builder -e USER_ID=1000 -e GROUP_ID=1000 \
               --env-file "/home/builder/environments.file" \
               --volumes-from workstation \
@@ -166,7 +164,7 @@ jobs:
             make -j${MAKEJOB} recoveryimage
             echo -e "\nYummy Recovery is Served.\n"
             EOF
-            echo -e "act-shell pid number is - " && cat /tmp/act.pid
+            echo -en "act-shell pid number is - " && cat /tmp/act.pid
             ACTPID=$(cat /tmp/act.pid) && kill -s SIGTERM ${ACTPID}
       - run:
           name: "COPY TO PRIMARY AND RELEASE"
@@ -185,7 +183,7 @@ jobs:
             # release
             ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -n "Test Release for $(echo $CODENAME)" -b "PBRP $(echo $VERSION)" -c ${CIRCLE_SHA1} -delete ${VERSION}-test /home/builder/upload
             echo -e "\n\nAll Done Gracefully\n\n"
-            echo -e "act-shell pid number is - " && cat /tmp/act.pid
+            echo -en "act-shell pid number is - " && cat /tmp/act.pid
             ACTPID=$(cat /tmp/act.pid) && kill -s SIGTERM ${ACTPID}
 
 workflows:
