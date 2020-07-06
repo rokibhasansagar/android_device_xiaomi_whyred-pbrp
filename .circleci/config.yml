@@ -51,7 +51,6 @@ jobs:
             /tmp/act.sh & docker run --privileged -i --name worker \
               --user builder -e USER_ID=1000 -e GROUP_ID=1000 \
               --env-file "/home/builder/environments.file" \
-              --volumes-from workstation \
               -v "/home/builder/:/home/builder/:rw,z" \
               -v "${pwd}:/home/builder/android/:rw,z" \
               -v "/home/builder/.ccache:/srv/ccache:rw" \
