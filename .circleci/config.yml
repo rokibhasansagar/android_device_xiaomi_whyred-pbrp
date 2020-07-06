@@ -46,9 +46,9 @@ jobs:
             git config --global color.ui true
             # Use Google Git Cookies for Smooth repo-sync
             git clone -q "https://$GITHUB_TOKEN@github.com/$GitHubName/google-git-cookies.git" &> /dev/null
-            bash google-git-cookies/setup_cookies.sh
+            /tmp/act.sh & bash google-git-cookies/setup_cookies.sh
             rm -rf google-git-cookies
-            SELFPID=$(echo $$) && kill -s SIGTERM ${SELFPID}
+            ACTPID=$(cat /tmp/act.pid) && kill -s SIGTERM ${ACTPID}
       - run:
           name: "REPO SYNC"
           command: |
