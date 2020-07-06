@@ -63,6 +63,7 @@ jobs:
             id
             cat /etc/os-release 
             cd /home/builder
+            ls -lA /home/builder/bin/
             mkdir android && cd android
             # Set GitAuth Infos"
             git config --global user.email $GitHubMail
